@@ -41,6 +41,11 @@ def load_facedata(skip):
 
 
 def miss_facedata(Y, missing_rate):
+    """
+    :param Y:
+    :param missing_rate:
+    :return:
+    """
     mask = np.random.binomial(1, missing_rate, size=Y.shape)  # 0,1
     Y_obs = deepcopy(Y)
     Y_obs[np.where(mask == 1)] = np.nan
@@ -49,29 +54,34 @@ def miss_facedata(Y, missing_rate):
 
 def main():
     skip = 2
-    missing_rate = 0.5
+    missing_rate = 0  # [0, 1]
     Y, D = load_facedata(skip)
     Y_obs = miss_facedata(Y, missing_rate)
 
     # # param
     M = 16  # dimension of latent variable
     # prior
-    sigma2_y = 0.001
-    m_mu = np.zeros(D)
-    Sigma_mu = np.eye(D)
-    m_W = np.zeros((M, D))
-    Sigma_W = np.zeros((M, M, D))  # (M, M) * D set
+    Sigma_W =  np.zeros((M, M, D))
     for d in range(D):
         Sigma_W[:, :, d] = 0.1 * np.eye(M)
-
-    # instance
-    dimensionalityReduction = DimensionalityReduction(D, M, sigma2_y, m_W, Sigma_W, m_mu, Sigma_mu)
+    prior= {
+        "D": D,
+        "M": M,
+        "sigma2_y": 0.001,
+        "m_mu": np.zeros(D),  # <mu>_p(mu), p(mu)=N(mu|0, I_M)
+        "Sigma_mu": np.eye(D),  # <mu*mu^T>_p(mu)
+        "m_W": np.zeros((M, D)),  # <w_d>_p(w_d), p(w_d) = N(w_d|0, Sigma_W)
+        "Sigma_W": Sigma_W  # <WW^T> (M, M) * D
+    }
 
     # learn & generate
     max_iter = 100
-    dimensionalityReduction.VariationalInference(deepcopy(Y_obs), max_iter)
+    dimensionalityReduction = DimensionalityReduction()      # instance
+    posterior, X = dimensionalityReduction.VariationalInference(deepcopy(Y_obs), prior, max_iter)
 
-    # DimensionalityReduction  97line
+    test = 1
+
+    # DimensionalityReduction  97line97line
 
 main()
 test = 1
