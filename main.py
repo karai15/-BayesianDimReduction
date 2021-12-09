@@ -1,9 +1,9 @@
 # coding=utf-8
 from copy import deepcopy
 import numpy as np
-# import matplotlib.pyplot as plt
 import sklearn.datasets as datasets
 from src.BayseDimensionalityReduction.DimensionalityReduction import *  # 自作Class wcResultClassのimport
+from src.BayseDimensionalityReduction.myfunc import *
 
 ###########################
 # # # skip=2
@@ -24,20 +24,21 @@ def load_facedata(skip):
     """
     face = datasets.fetch_olivetti_faces()  # 同一人物の様々な状態の顔画像（40人 x 10枚）
     Y_raw = face["images"]  # (400, 64, 64)
-
     N, Sraw_row, Sraw_col = Y_raw.shape
+    L = np.round(Sraw_row / skip).astype("int")  # image height
     Y_tmp = Y_raw[:, 0::skip, 0::skip]  # slice data
-
-    # # plot test
-    # plt.figure()
-    # plt.imshow(Y_tmp[1, :, :])
-    # plt.show()
 
     # convert D dimensional vector * N set
     Y = Y_tmp.reshape(Y_tmp.shape[1] * Y_tmp.shape[2], N)
     D = Y.shape[0]  # Y of dimension
 
-    return Y, D
+    # # plot test
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.imshow(Y_tmp[0, :, :])
+    # plt.show()
+
+    return Y, D, L
 
 
 def miss_facedata(Y, missing_rate):
@@ -49,14 +50,15 @@ def miss_facedata(Y, missing_rate):
     mask = np.random.binomial(1, missing_rate, size=Y.shape)  # 0,1
     Y_obs = deepcopy(Y)
     Y_obs[np.where(mask == 1)] = np.nan
-    return Y_obs
+    return Y_obs, mask
 
 
 def main():
     skip = 2
-    missing_rate = 0  # [0, 1]
-    Y, D = load_facedata(skip)
-    Y_obs = miss_facedata(Y, missing_rate)
+    missing_rate = 0.5  # [0, 1]
+    Y, D, L = load_facedata(skip)
+    Y_obs, mask = miss_facedata(Y, missing_rate)
+    N = Y_obs.shape[1]
 
     # # param
     M = 16  # dimension of latent variable
@@ -75,13 +77,46 @@ def main():
     }
 
     # learn & generate
-    max_iter = 100
+    max_iter = 30
     dimensionalityReduction = DimensionalityReduction()      # instance
-    posterior, X = dimensionalityReduction.VariationalInference(deepcopy(Y_obs), prior, max_iter)
+    posterior, X_est = dimensionalityReduction.VariationalInference(deepcopy(Y_obs), prior, max_iter)
+    Y_est = posterior["m_W"].T @ X_est + np.kron(np.ones((1, N)), c_vec(posterior["m_mu"]))
+    Y_itp = deepcopy(Y_obs)  # interpolation data
+    Y_itp[np.where(mask==1)] = Y_est[np.where(mask==1)]
 
-    test = 1
+    # convert Y (1dim => 2dim)
+    Y_obs = Y_obs.reshape(N, L, L)
+    Y_itp = Y_itp.reshape(N, L, L)
+    Y_est = Y_est.reshape(N, L, L)
 
-    # DimensionalityReduction  97line97line
+    # plot
+    N_show = 4
+    plot_image(Y_obs, N_show, "Observation")  # Observation
+    plot_image(Y_itp, N_show, "Interpolation")  # Interpolation
+    plot_image(Y_est, N_show, "Estimation")  # Estimation
+    plt.show()
+
+
+    # fig, axes = plt.subplots(N_show, N_show, tight_layout=True)
+    # cnt = 0
+    # for i in range(N_show):
+    #     for j in range(N_show):
+    #         axes[i, j].imshow(Y_obs[cnt, :, :])
+    #         cnt += 1
+    # plt.suptitle("Observation")
+    #
+    #
+    # # Interpolation
+    # fig = plt.figure()
+    # ax = fig.add_subplot(1,1,1)
+    # ax.imshow(Y_itp[0, :,:])
+    # ax.set_title("Interpolation")
+    #
+    # # Estimation
+    # fig = plt.figure()
+    # ax = fig.add_subplot(1,1,1)
+    # ax.imshow(Y_itp[0, :,:])
+    # ax.set_title("Estimation")
+
 
 main()
-test = 1

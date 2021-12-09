@@ -1,16 +1,16 @@
 from copy import deepcopy
 import numpy as np
-
+from src.BayseDimensionalityReduction.myfunc import *
 
 class DimensionalityReduction:
 
-    # 配列を列ベクトルに変形 (N,1)
-    def c_vec(self, array):
-        return array.reshape(-1, 1)
-
-    # 配列を行ベクトルに変形 (1,N)
-    def r_vec(self, array):
-        return array.reshape(1, -1)
+    # # 配列を列ベクトルに変形 (N,1)
+    # def c_vec(self, array):
+    #     return array.reshape(-1, 1)
+    #
+    # # 配列を行ベクトルに変形 (1,N)
+    # def r_vec(self, array):
+    #     return array.reshape(1, -1)
 
     def initial(self, Y, prior):
         M = prior["M"]
@@ -18,7 +18,7 @@ class DimensionalityReduction:
         X = np.random.normal(loc=0, scale=1, size=(M, N))  # <x>_p(x), p(x) = N(x|0, I_M)
         XX = np.zeros((M, M, N))  # <xx>_p(x)
         for n in range(N):
-            XX[:, :, n] = X[:, n] @ (X[:, n].T) + np.eye(M)  # <xx> = <x><x>^T + I_M
+            XX[:, :, n] = c_vec(X[:, n]) @ r_vec(X[:, n]) + np.eye(M)  # <xx> = <x><x>^T + I_M
         return X, XX
 
     def interpolate(self, mask, X, posterior):
@@ -26,7 +26,7 @@ class DimensionalityReduction:
         m_W = posterior["m_W"]
         m_mu = posterior["m_mu"]
         # update
-        Y_est = m_W.T @ X + np.kron(np.ones((1, N)), self.c_vec(m_mu))  # Estimate all of Y
+        Y_est = m_W.T @ X + np.kron(np.ones((1, N)), c_vec(m_mu))  # Estimate all of Y
         return Y_est
 
     def update_W(self, Y, prior, posterior, X, XX):
@@ -40,8 +40,8 @@ class DimensionalityReduction:
         Sigma_W = np.zeros((M, M, D))
         for d in range(D):
             Sigma_W[:, :, d] = np.linalg.inv(1 / prior["sigma2_y"] * np.sum(XX, axis=2) + np.linalg.inv(prior["Sigma_W"][:, :, d]))
-            m_W[:, d] = ( 1 / prior["sigma2_y"] * Sigma_W[:, :, d] @ (
-                        X @ self.c_vec(Y[d, :]) - X @ np.ones((N, 1)) * m_mu[d]) )[:,0]
+            m_W[:, d] =  (1 / prior["sigma2_y"] * Sigma_W[:, :, d] @ X @ (c_vec(Y[d, :]) - m_mu[d] * np.ones((N, 1)) ))[:, 0]
+
         # update
         posterior["Sigma_W"] = Sigma_W
         posterior["m_W"] = m_W
@@ -56,7 +56,8 @@ class DimensionalityReduction:
 
         # VI for q(mu)
         Sigma_mu = np.linalg.inv(N / prior["sigma2_y"] * np.eye(D) + np.linalg.inv(prior["Sigma_mu"]))
-        m_mu = 1 / prior["sigma2_y"] * Y @ np.ones(N) - m_W.T @ X @ np.ones(N)
+        m_mu = 1 / prior["sigma2_y"] * Sigma_mu @ (Y - m_W.T @ X ) @ np.ones(N)
+
         # update
         posterior["Sigma_mu"] = Sigma_mu
         posterior["m_mu"] = m_mu
@@ -78,7 +79,7 @@ class DimensionalityReduction:
             Sigma_X = np.linalg.inv(1 / prior["sigma2_y"] * (m_W @ m_W.T + np.sum(Sigma_W, axis=2)) + np.eye(M))
             mu_X = 1 / prior["sigma2_y"] * Sigma_X @ m_W @ (Y[:, n] - m_mu)
             X[:, n] = mu_X
-            XX[:, :, n] = mu_X @ mu_X.T + Sigma_X
+            XX[:, :, n] = c_vec(mu_X) @ r_vec(mu_X) + Sigma_X
 
         return X, XX
 
