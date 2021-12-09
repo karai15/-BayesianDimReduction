@@ -43,7 +43,7 @@ def miss_facedata(Y, missing_rate):
 
 def main():
     skip = 2
-    missing_rate = 0.5  # [0, 1]
+    missing_rate = 0.3  # [0, 1]
     Y, D, L = load_facedata(skip)
     Y_obs, mask = miss_facedata(Y, missing_rate)
     N = Y_obs.shape[1]
