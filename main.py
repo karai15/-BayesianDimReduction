@@ -5,18 +5,6 @@ import sklearn.datasets as datasets
 from src.BayseDimensionalityReduction.DimensionalityReduction import *  # 自作Class wcResultClassのimport
 from src.BayseDimensionalityReduction.myfunc import *
 
-###########################
-# # # skip=2
-# aaa = np.array([1, 2, 3, 4, 5], dtype="float32")
-# # # aaa[1] /= 0
-# # x = np.nan
-# # aaa[1] = x
-# # # bbb = aaa[0::skip]
-# # # aaa = np.random.binomial(1, 0.5, size=(10, 2))
-# dim = DimensionalityReduction()
-# test = 1
-###########################
-
 def load_facedata(skip):
     """
     scikit-learnのサンプルデータセットの一覧と使い方
@@ -61,7 +49,7 @@ def main():
     N = Y_obs.shape[1]
 
     # # param
-    M = 16  # dimension of latent variable
+    M = 32  # dimension of latent variable
     # prior
     Sigma_W =  np.zeros((M, M, D))
     for d in range(D):
@@ -77,7 +65,7 @@ def main():
     }
 
     # learn & generate
-    max_iter = 30
+    max_iter = 50
     dimensionalityReduction = DimensionalityReduction()      # instance
     posterior, X_est = dimensionalityReduction.VariationalInference(deepcopy(Y_obs), prior, max_iter)
     Y_est = posterior["m_W"].T @ X_est + np.kron(np.ones((1, N)), c_vec(posterior["m_mu"]))
@@ -88,35 +76,14 @@ def main():
     Y_obs = Y_obs.reshape(N, L, L)
     Y_itp = Y_itp.reshape(N, L, L)
     Y_est = Y_est.reshape(N, L, L)
+    Y_truth = Y.reshape(N, L, L)
 
     # plot
     N_show = 4
     plot_image(Y_obs, N_show, "Observation")  # Observation
     plot_image(Y_itp, N_show, "Interpolation")  # Interpolation
     plot_image(Y_est, N_show, "Estimation")  # Estimation
+    plot_image(Y_truth, N_show, "Truth")  # Estimation
     plt.show()
-
-
-    # fig, axes = plt.subplots(N_show, N_show, tight_layout=True)
-    # cnt = 0
-    # for i in range(N_show):
-    #     for j in range(N_show):
-    #         axes[i, j].imshow(Y_obs[cnt, :, :])
-    #         cnt += 1
-    # plt.suptitle("Observation")
-    #
-    #
-    # # Interpolation
-    # fig = plt.figure()
-    # ax = fig.add_subplot(1,1,1)
-    # ax.imshow(Y_itp[0, :,:])
-    # ax.set_title("Interpolation")
-    #
-    # # Estimation
-    # fig = plt.figure()
-    # ax = fig.add_subplot(1,1,1)
-    # ax.imshow(Y_itp[0, :,:])
-    # ax.set_title("Estimation")
-
 
 main()
