@@ -91,4 +91,6 @@ def main():
     plot_image(Y_truth, N_show, "Truth")  # Estimation
     plt.show()
 
-main()
+
+if __name__ == "__main__":
+    main()
