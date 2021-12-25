@@ -44,7 +44,6 @@ def miss_facedata(Y, missing_rate):
 
 def main():
     start = time.time()
-
     skip = 2
     missing_rate = 0.3  # [0, 1]
     Y, D, L = load_facedata(skip)
@@ -68,6 +67,7 @@ def main():
     }
 
     # learn & generate
+    max_iter = 10
     dimensionalityReduction = DimensionalityReduction()      # instance
     posterior, X_est = dimensionalityReduction.VariationalInference(deepcopy(Y_obs), prior, max_iter)
     Y_est = posterior["m_W"].T @ X_est + np.kron(np.ones((1, N)), c_vec(posterior["m_mu"]))
