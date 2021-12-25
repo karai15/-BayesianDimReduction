@@ -4,14 +4,6 @@ from src.BayseDimensionalityReduction.myfunc import *
 
 class DimensionalityReduction:
 
-    # # 配列を列ベクトルに変形 (N,1)
-    # def c_vec(self, array):
-    #     return array.reshape(-1, 1)
-    #
-    # # 配列を行ベクトルに変形 (1,N)
-    # def r_vec(self, array):
-    #     return array.reshape(1, -1)
-
     def initial(self, Y, prior):
         M = prior["M"]
         D, N = Y.shape

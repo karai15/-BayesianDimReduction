@@ -1,6 +1,7 @@
 # coding=utf-8
 from copy import deepcopy
 import numpy as np
+import time
 import sklearn.datasets as datasets
 from src.BayseDimensionalityReduction.DimensionalityReduction import *  # 自作Class wcResultClassのimport
 from src.BayseDimensionalityReduction.myfunc import *
@@ -42,6 +43,7 @@ def miss_facedata(Y, missing_rate):
 
 
 def main():
+    start = time.time()
     skip = 2
     missing_rate = 0.3  # [0, 1]
     Y, D, L = load_facedata(skip)
@@ -65,7 +67,7 @@ def main():
     }
 
     # learn & generate
-    max_iter = 50
+    max_iter = 10
     dimensionalityReduction = DimensionalityReduction()      # instance
     posterior, X_est = dimensionalityReduction.VariationalInference(deepcopy(Y_obs), prior, max_iter)
     Y_est = posterior["m_W"].T @ X_est + np.kron(np.ones((1, N)), c_vec(posterior["m_mu"]))
@@ -77,6 +79,9 @@ def main():
     Y_itp = Y_itp.reshape(N, L, L)
     Y_est = Y_est.reshape(N, L, L)
     Y_truth = Y.reshape(N, L, L)
+
+    elapsed_time = time.time() - start
+    print("elapsed_time:{0}".format(elapsed_time) + "[sec]")
 
     # plot
     N_show = 4
