@@ -3,7 +3,7 @@ from copy import deepcopy
 import numpy as np
 import time
 import sklearn.datasets as datasets
-from src.BayseDimensionalityReduction.DimensionalityReduction import *  # 自作Class wcResultClassのimport
+from src.BayseDimensionalityReduction.DimensionalityReduction import *
 from src.BayseDimensionalityReduction.myfunc import *
 
 def load_facedata(skip):
@@ -37,6 +37,14 @@ def miss_facedata(Y, missing_rate):
     :return:
     """
     mask = np.random.binomial(1, missing_rate, size=Y.shape)  # 0,1
+
+    ###############
+    # _mask = np.random.binomial(1, missing_rate, size=Y.shape[0])  # 0,1
+    # mask = c_vec(_mask) @ np.ones((1, Y.shape[1]), dtype=_mask.dtype)
+    # mask = np.zeros(Y.shape)
+    # mask[0:Y.shape[0]:4, 0:Y.shape[1]:4] = 1
+    ###############
+
     Y_obs = deepcopy(Y)
     Y_obs[np.where(mask == 1)] = np.nan
     return Y_obs, mask

@@ -20,6 +20,6 @@ def plot_image(Y, N_show, title):
     cnt = 0
     for i in range(N_show):
         for j in range(N_show):
-            axes[i, j].imshow(Y[cnt, :, :])
+            axes[i, j].imshow(Y[cnt, :, :], cmap="jet")
             cnt += 1
     plt.suptitle(title)
